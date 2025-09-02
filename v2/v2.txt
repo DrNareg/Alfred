@@ -1,0 +1,5 @@
+added firestore database
+saving to and retrieving implemented
+clear history works
+show last 10 messages implemented
+ignore warning in index.html lol 
