@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alfred - Settings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom scrollbar styles (copy from index.html if you want consistent scrollbars) */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #2d3748;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #4a5568;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #6a7488;
+    }
+    textarea {
+      min-height: 100px; /* Base height for textareas */
+      resize: vertical; /* Allow vertical resizing only */
+      overflow-y: auto; /* Ensure scrollbar appears */
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 h-screen flex flex-col font-sans">
+  <div class="flex flex-1 overflow-hidden">
+    <aside class="w-64 bg-gray-800 p-6 flex flex-col justify-between border-r border-gray-700 hidden md:flex">
+      <div>
+        <h2 class="text-2xl font-bold text-blue-400 mb-6 text-center">Alfred</h2>
+        
+        <a href="/chat" class="w-full block text-center bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm py-2 px-4 rounded-lg mb-4 transition">
+          Back to Chat
+        </a>
+        <button id="clear-btn" type="button" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm py-2 px-4 rounded-lg mb-6 transition">Clear History</button>
+      </div>
+      <div>
+        <div class="text-sm text-gray-400 mb-2">Logged in as:</div>
+        <div class="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg">
+          <div class="flex-shrink-0">
+            <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold">
+              {{ username[0].upper() }}
+            </div>
+          </div>
+          <span class="font-medium text-gray-50">{{ username }}</span>
+        </div>
+        <a href="/logout" class="block w-full text-center mt-4 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition duration-300 ease-in-out text-sm">Logout</a>
+      </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col bg-gray-850 p-6 overflow-y-auto">
+      <h1 class="text-3xl font-bold text-gray-50 mb-8 text-center">Manage Alfred's Persona</h1>
+
+      <div class="max-w-xl mx-auto w-full bg-gray-800 p-8 rounded-lg shadow-lg">
+        {% if success_message %}
+        <div class="bg-green-600 text-white p-3 rounded-md mb-4 text-center">{{ success_message }}</div>
+        {% endif %}
+        {% if error_message %}
+        <div class="bg-red-600 text-white p-3 rounded-md mb-4 text-center">{{ error_message }}</div>
+        {% endif %}
+
+        <form method="POST" action="/settings" class="space-y-6">
+          <div>
+            <label for="agent_persona" class="block text-sm font-medium text-gray-300 mb-2">Agent Persona:</label>
+            <textarea
+              id="agent_persona"
+              name="agent_persona"
+              class="w-full bg-gray-700 text-gray-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+              rows="4"
+              placeholder="e.g., You are a highly sarcastic AI assistant."
+            >{{ user_profile.get('agent_persona', '') }}</textarea>
+          </div>
+
+          <div>
+            <label for="agent_goal" class="block text-sm font-medium text-gray-300 mb-2">Agent Goal:</label>
+            <textarea
+              id="agent_goal"
+              name="agent_goal"
+              class="w-full bg-gray-700 text-gray-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+              rows="3"
+              placeholder="e.g., Your goal is to provide concise answers, even if it means being blunt."
+            >{{ user_profile.get('agent_goal', '') }}</textarea>
+          </div>
+
+          <div>
+            <label for="special_instructions" class="block text-sm font-medium text-gray-300 mb-2">Special Instructions:</label>
+            <textarea
+              id="special_instructions"
+              name="special_instructions"
+              class="w-full bg-gray-700 text-gray-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+              rows="3"
+              placeholder="e.g., Never use emojis. Always ask a follow-up question."
+            >{{ user_profile.get('special_instructions', '') }}</textarea>
+          </div>
+
+          <button type="submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold">
+            Save Settings
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Optionally, you might want a clear history button on the settings page too.
+    const clearBtn = document.getElementById("clear-btn");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", async () => {
+        if (!confirm("Clear all chat history?")) return;
+        const res = await fetch("/clear-history", { method: "POST" });
+        const result = await res.json();
+        if (result.success) {
+          alert("Chat history cleared!");
+          // Optionally, redirect back to chat or update UI
+        } else {
+          alert("Failed to clear chat history.");
+        }
+      });
+    }
+  </script>
+</body>
+</html>
