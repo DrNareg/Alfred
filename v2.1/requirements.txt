@@ -1,0 +1,7 @@
+Flask
+python-dotenv
+google-genai
+firebase-admin
+google-cloud-firestore
+google-generativeai
+pytz
