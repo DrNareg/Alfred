@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alfred</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body class="theme-bg-primary theme-text-light h-screen flex flex-col font-sans">
+  <div class="flex flex-1 overflow-hidden relative">
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden md:hidden"></div>
+
+    <aside
+      id="sidebar"
+      class="fixed inset-y-0 left-0 w-64 theme-bg-secondary p-6 flex flex-col justify-between border-r theme-border z-30
+             transform -translate-x-full transition-transform duration-300 ease-in-out
+             md:relative md:translate-x-0 md:flex md:w-64"
+    >
+      <div>
+        <h2 class="text-2xl font-bold theme-text-highlight mb-6 text-center">
+          Alfred
+        </h2>
+        <button
+          id="clear-btn"
+          type="button"
+          class="w-full theme-button-secondary theme-text-muted text-sm py-2 px-4 rounded-lg mb-4"
+        >
+          Clear History
+        </button>
+
+        {# --- NEW BUTTON FOR AGENT SETTINGS --- #}
+        <a
+          href="/settings"
+          class="w-full block text-center theme-button-secondary theme-text-muted text-sm py-2 px-4 rounded-lg mb-6"
+        >
+          Manage Alfred's Persona
+        </a>
+      </div>
+      <div>
+        <div class="text-sm theme-text-muted mb-2">Logged in as:</div>
+        <div class="flex items-center space-x-3 p-3 theme-bg-tertiary rounded-lg">
+          <div class="flex-shrink-0">
+            <div
+              class="h-8 w-8 rounded-full theme-button-primary flex items-center justify-center text-sm font-bold"
+            >
+              {{ username[0].upper() }}
+            </div>
+          </div>
+          <span class="font-medium theme-text-light">{{ username }}</span>
+        </div>
+        <a
+          href="/logout"
+          class="block w-full text-center mt-4 theme-button-danger py-2 px-4 rounded-lg text-sm"
+          >Logout</a
+        >
+      </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col theme-bg-primary md:ml-0">
+      <header
+        class="theme-bg-secondary theme-text-light py-4 px-6 text-xl font-semibold flex justify-between items-center border-b theme-border md:hidden fixed top-0 left-0 right-0 z-10"
+      >
+        <button id="burger-menu" class="md:hidden p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            ></path>
+          </svg>
+        </button>
+      </header>
+
+      <div
+        class="flex-1 overflow-y-auto p-6 space-y-4 max-w-3xl mx-auto w-full"
+        id="chat-box"
+      >
+        {# --- Conditionally display initial message based on history length --- #}
+        {% if history|length == 0 %}
+        <div class="text-center theme-text-muted text-sm mt-4">
+          Start a conversation by typing a message below.
+        </div>
+        {% endif %}
+      </div>
+
+      <div
+        class="p-6 theme-bg-secondary border-t theme-border flex items-center justify-center"
+      >
+        <form id="chat-form" class="flex w-full max-w-3xl relative">
+          <textarea
+            id="user-input"
+            placeholder="Message Alfred..."
+            class="flex-1 theme-input-field theme-placeholder p-3 pr-16 rounded-lg resize-none overflow-y-auto focus:ring-blue-500"
+            rows="1"
+            style="min-height: 48px; max-height: 200px"
+            required
+            oninput="this.style.height = '';this.style.height = this.scrollHeight + 'px'"
+          ></textarea>
+          <button
+            type="submit"
+            class="absolute right-3 top-1/2 -translate-y-1/2 theme-button-primary p-2 rounded-full flex items-center justify-center w-8 h-8 focus:ring-blue-500 focus:ring-opacity-50"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+            </svg>
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  {# Add marked.js library here #}
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <script>
+    const history = {{ history | tojson }};
+    const chatBox = document.getElementById("chat-box");
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("user-input");
+    const clearBtn = document.getElementById("clear-btn");
+    const currentUsername = "{{ username }}";
+
+    // Sidebar elements
+    const sidebar = document.getElementById('sidebar');
+    const burgerMenu = document.getElementById('burger-menu');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+    // --- Sidebar Toggle Logic ---
+    burgerMenu.addEventListener('click', () => {
+      sidebar.classList.toggle('-translate-x-full');
+      sidebarOverlay.classList.toggle('hidden');
+    });
+
+    sidebarOverlay.addEventListener('click', () => {
+      sidebar.classList.add('-translate-x-full');
+      sidebarOverlay.classList.add('hidden');
+    });
+    // --- End Sidebar Toggle Logic ---
+
+
+    // --- Modified addMessage function ---
+    function addMessage(content, isUser) {
+      const messageWrapper = document.createElement("div");
+      messageWrapper.className = `flex items-start gap-3 message-fade-in ${isUser ? "justify-end" : "justify-start"}`;
+
+      const avatar = document.createElement("div");
+      // Use theme-button-primary for user avatar, theme-bg-tertiary for AI
+      avatar.className = `flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${isUser ? "theme-button-primary text-white" : "theme-bg-tertiary theme-text-muted"}`;
+      avatar.textContent = isUser ? currentUsername.charAt(0).toUpperCase() : "AI";
+
+      const messageContent = document.createElement("div");
+      // Apply styling based on user/AI, and importantly, set innerHTML to render markdown
+      messageContent.className = `p-3 rounded-xl max-w-[calc(100%-60px)] ${isUser ? "theme-button-primary rounded-br-none" : "theme-bg-tertiary theme-text-light rounded-bl-none"}`;
+
+      // --- Markdown Conversion Happens Here ---
+      messageContent.innerHTML = marked.parse(content);
+
+      if (isUser) {
+        messageWrapper.appendChild(messageContent);
+        messageWrapper.appendChild(avatar);
+      } else {
+        messageWrapper.appendChild(avatar);
+        messageWrapper.appendChild(messageContent);
+      }
+
+      chatBox.appendChild(messageWrapper);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return messageWrapper; // Return the created element if needed elsewhere
+    }
+
+    // Load history
+    if (Array.isArray(history) && history.length > 0) {
+      history.forEach((entry) => {
+        // When loading history, we pass the raw messages to addMessage
+        addMessage(
+          entry.user_message +
+            `<div class="text-xs theme-text-muted mt-1">${entry.timestamp || ""}</div>`,
+          true,
+        );
+        addMessage(
+          entry.ai_response +
+            `<div class="text-xs theme-text-muted mt-1">${entry.timestamp || ""}</div>`,
+          false,
+        );
+      });
+    } else {
+      // Removed the initial "Start a conversation..." message from JavaScript
+      // This is now handled by a conditional block in the HTML directly,
+      // making sure it only shows if there's no history.
+    }
+
+    // Listener for the textarea to handle key presses
+    input.addEventListener("keydown", function (event) {
+      // If Ctrl + Enter is pressed
+      if (event.ctrlKey && event.key === "Enter") {
+        event.preventDefault(); // Prevent default Enter behavior (newline)
+        form.requestSubmit(); // Programmatically submit the form
+      }
+    });
+
+    // Listener for the form submission
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = input.value.trim();
+      if (!message) return;
+
+      // Remove the "Start a conversation..." message if it exists
+      const initialMessage = chatBox.querySelector(
+        ".text-center.theme-text-muted.text-sm.mt-4",
+      );
+      if (initialMessage) {
+        initialMessage.remove();
+      }
+
+      // Add user's message to the chatbox
+      addMessage(
+        message +
+          `<div class="text-xs theme-text-muted mt-1">${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</div>`,
+        true,
+      );
+      input.value = "";
+      input.style.height = "48px"; // Reset height
+
+      // Add a temporary "Thinking..." message for AI
+      const typingIndicator = addMessage("Thinking...", false);
+
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
+        const data = await res.json();
+
+        // Remove the "Thinking..." indicator
+        if (typingIndicator && chatBox.contains(typingIndicator)) {
+          chatBox.removeChild(typingIndicator);
+        }
+
+        // Add the AI's response, which should now be markdown-parsed
+        addMessage(
+          data.response +
+            `<div class="text-xs theme-text-muted mt-1">${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</div>`,
+          false,
+        );
+      } catch (error) {
+        console.error("Error:", error);
+        // Remove typing indicator on error
+        if (typingIndicator && chatBox.contains(typingIndicator)) {
+          chatBox.removeChild(typingIndicator);
+        }
+        addMessage("Sorry, something went wrong.", false);
+      }
+    });
+
+    clearBtn.addEventListener("click", async () => {
+      if (!confirm("Clear all chat history?")) return;
+      const res = await fetch("/clear-history", { method: "POST" });
+      const result = await res.json();
+      if (result.success) {
+        chatBox.innerHTML = `<div class="text-center theme-text-muted text-sm mt-4">Start a conversation by typing a message below.</div>`; // Re-add initial message
+      }
+    });
+  </script>
+</body>
+</html>
