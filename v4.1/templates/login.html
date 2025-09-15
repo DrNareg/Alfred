@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-bg-primary flex items-center justify-center h-screen font-sans">
+  <div class="theme-bg-secondary p-8 rounded-xl shadow-2xl w-full max-w-md theme-border">
+    <h1 class="text-3xl font-bold mb-8 text-center theme-text-highlight">Login to Alfred</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="mb-6 space-y-2">
+          {% for category, message in messages %}
+            <li class="p-3 rounded-lg text-sm text-center
+              {% if category == 'success' %}flash-success{% elif category == 'danger' %}flash-danger{% else %}flash-info{% endif %}">
+              {{ message }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" class="space-y-6">
+      <div>
+        <label for="username" class="block theme-text-muted text-sm font-medium mb-2">Username</label>
+        <input
+          type="text"
+          name="username"
+          id="username"
+          autocomplete="username"
+          placeholder="Enter your username"
+          class="w-full p-3 rounded-lg theme-input-field theme-placeholder transition duration-200"
+          required>
+      </div>
+
+      <div>
+        <label for="password" class="block theme-text-muted text-sm font-medium mb-2">Password</label>
+        <input
+          type="password"
+          name="password"
+          id="password"
+          autocomplete="current-password"
+          placeholder="Enter your password"
+          class="w-full p-3 rounded-lg theme-input-field theme-placeholder transition duration-200"
+          required>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full theme-button-primary font-semibold py-3 rounded-lg transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+      >
+        Log In
+      </button>
+    </form>
+  </div>
+</body>
+</html>
