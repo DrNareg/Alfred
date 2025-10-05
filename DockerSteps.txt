@@ -1,0 +1,8 @@
+steps to containarize and deploy:
+
+make sure you have your Google application credentials json in your directory 
+store api keys in a .env file or manually add them through cloud run ui
+docker build -t gcr.io/[YOUR_PROJECT_ID]/my-gemini-chatbot:latest .
+docker push gcr.io/[YOUR_PROJECT_ID]/my-gemini-chatbot:latest
+then deploy through cloud run ui
+then edit deployment to include api key and flask secret key from inside secret manager
