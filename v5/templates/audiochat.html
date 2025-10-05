@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alfred - Audio Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    </head>
+<body class="theme-bg-primary theme-text-light h-screen flex flex-col font-sans">
+    <div class="flex flex-1 overflow-hidden relative">
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden md:hidden"></div>
+
+        <aside
+          id="sidebar"
+          class="fixed inset-y-0 left-0 w-64 theme-bg-secondary p-6 flex flex-col justify-between border-r theme-border z-30
+                 transform -translate-x-full transition-transform duration-300 ease-in-out
+                 md:relative md:translate-x-0 md:flex md:w-64"
+        >
+            <div>
+                <h2 class="text-2xl font-bold theme-text-highlight mb-6 text-center">Alfred</h2>
+                <a href="{{ url_for('chat_page') }}" class="w-full block text-center theme-button-secondary theme-text-muted text-sm py-2 px-4 rounded-lg mb-4">
+                    Text Chat
+                </a>
+                <a href="/settings" class="w-full block text-center theme-button-secondary theme-text-muted text-sm py-2 px-4 rounded-lg mb-6">
+                    Manage Alfred's Persona
+                </a>
+            </div>
+            <div>
+                <div class="text-sm theme-text-muted mb-2">Logged in as:</div>
+                <div class="flex items-center space-x-3 p-3 theme-bg-tertiary rounded-lg">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 rounded-full theme-button-primary flex items-center justify-center text-sm font-bold">
+                            {{ username[0].upper() }}
+                        </div>
+                    </div>
+                    <span class="font-medium theme-text-light">{{ username }}</span>
+                </div>
+                <a href="/logout" class="block w-full text-center mt-4 theme-button-danger py-2 px-4 rounded-lg text-sm">Logout</a>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col theme-bg-primary md:ml-0">
+            <header class="theme-bg-secondary theme-text-light py-4 px-6 text-xl font-semibold flex justify-between items-center border-b theme-border md:hidden fixed top-0 left-0 right-0 z-10">
+                <button id="burger-menu" class="md:hidden p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <span class="font-semibold">Audio Chat</span>
+                <div class="w-6"></div> </header>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-4 max-w-3xl mx-auto w-full pt-24 md:pt-6" id="chat-box">
+                <div class="text-center theme-text-muted text-sm mt-4">
+                    Press the record button to start speaking.
+                </div>
+            </div>
+
+            <div class="p-6 theme-bg-secondary border-t theme-border flex items-center justify-center">
+                <button id="record-btn" class="w-20 h-20 theme-button-primary rounded-full flex items-center justify-center text-white focus:outline-none transition-transform duration-200 ease-in-out transform hover:scale-105">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
+                    </svg>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const recordBtn = document.getElementById('record-btn');
+        const chatBox = document.getElementById('chat-box');
+        const currentUsername = "{{ username }}";
+
+        const sidebar = document.getElementById('sidebar');
+        const burgerMenu = document.getElementById('burger-menu');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        
+        if(burgerMenu) {
+            burgerMenu.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebarOverlay.classList.toggle('hidden');
+            });
+        }
+
+        if(sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+            });
+        }
+
+        const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
+            const byteCharacters = atob(b64Data);
+            const byteArrays = [];
+            for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+                const slice = byteCharacters.slice(offset, offset + sliceSize);
+                const byteNumbers = new Array(slice.length);
+                for (let i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                byteArrays.push(byteArray);
+            }
+            return new Blob(byteArrays, { type: contentType });
+        };
+        
+        function addMessage(content, isUser) {
+            const messageWrapper = document.createElement("div");
+            messageWrapper.className = `flex items-start gap-3 w-full ${isUser ? "justify-end" : "justify-start"}`;
+            const avatarChar = isUser ? currentUsername.charAt(0).toUpperCase() : "AI";
+            const avatarClass = isUser ? "theme-button-primary text-white" : "theme-bg-tertiary theme-text-muted";
+            const bubbleClass = isUser ? "theme-button-primary rounded-br-none" : "theme-bg-tertiary theme-text-light rounded-bl-none";
+            
+            const messageHTML = `
+                <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${avatarClass}">
+                    ${avatarChar}
+                </div>
+                <div class="p-3 rounded-xl max-w-[calc(100%-50px)] ${bubbleClass}">
+                    ${marked.parse(content)}
+                </div>
+            `;
+            
+            messageWrapper.innerHTML = messageHTML;
+            if(isUser) {
+                messageWrapper.innerHTML = `
+                    <div class="p-3 rounded-xl max-w-[calc(100%-50px)] ${bubbleClass}">
+                        ${marked.parse(content)}
+                    </div>
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${avatarClass}">
+                        ${avatarChar}
+                    </div>
+                `;
+            }
+
+            const initialMessage = chatBox.querySelector(".text-center.theme-text-muted");
+            if (initialMessage) {
+                initialMessage.remove();
+            }
+
+            chatBox.appendChild(messageWrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return messageWrapper;
+        }
+
+        async function handleRecording() {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+                    
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = sendAudioToServer;
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordBtn.classList.add('recording');
+                    recordBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>`;
+                } catch (err) {
+                    console.error("Error accessing microphone:", err);
+                    addMessage("Error: Could not access the microphone. Please grant permission.", false);
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                recordBtn.classList.remove('recording');
+                recordBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
+                    </svg>`;
+            }
+        }
+
+        async function sendAudioToServer() {
+            const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+            audioChunks = [];
+
+            const formData = new FormData();
+            formData.append('audio_data', audioBlob);
+
+            const thinkingMessage = addMessage("<i>Transcribing and thinking...</i>", true);
+
+            try {
+                const response = await fetch('/transcribe_and_chat', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                chatBox.removeChild(thinkingMessage); 
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Server error');
+                }
+
+                const data = await response.json();
+                
+                addMessage(data.user_transcript, true);
+                const aiMessage = addMessage("...", false);
+                aiMessage.querySelector(".p-3").innerHTML = marked.parse(data.ai_response_text);
+                
+                const audioBlob = b64toBlob(data.ai_response_audio, 'audio/mpeg');
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                audio.play();
+
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage(`**Error:** ${error.message}`, false);
+            }
+        }
+
+        recordBtn.addEventListener('click', handleRecording);
+    </script>
+</body>
+</html>

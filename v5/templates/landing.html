@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-bg-primary flex items-center justify-center h-screen font-sans">
+    <div class="theme-bg-secondary p-12 rounded-xl shadow-2xl w-full max-w-lg text-center theme-border">
+        <h1 class="text-4xl font-bold mb-8 theme-text-highlight">Welcome</h1>
+        <p class="theme-text-muted mb-10">Please select a project to continue</p>
+        
+        <div class="space-y-4">
+            <a href="{{ url_for('login') }}" class="block w-full theme-button-primary font-semibold py-3 rounded-lg transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 text-lg">
+                Alfred Chat
+            </a>
+            
+            <button disabled class="w-full bg-gray-500 text-gray-300 font-semibold py-3 rounded-lg cursor-not-allowed text-lg">
+                Notflix (Coming Soon)
+            </button>
+        </div>
+    </div>
+</body>
+</html>
