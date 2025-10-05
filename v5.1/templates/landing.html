@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='batman-icon.svg') }}">
+    <title>The Batcave</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-bg-primary flex h-screen font-sans">
+    <div class="m-auto theme-bg-secondary w-full max-w-md rounded-2xl shadow-2xl theme-border-glow overflow-hidden page-fade-in border">
+        <div class="p-8 sm:p-12">
+            <div class="text-center mb-10">
+                <img src="{{ url_for('static', filename='batman-icon.svg') }}" alt="Alfred Icon" class="w-24 h-24 mx-auto mb-4" /> 
+                <h1 class="text-3xl sm:text-4xl font-bold theme-text-light">Welcome</h1>
+                <p class="theme-text-muted mt-2 text-sm sm:text-base">Please select a service to proceed</p>
+            </div>
+            
+            <div class="space-y-4">
+                <a href="{{ url_for('login') }}" class="block w-full theme-button-primary font-semibold py-3 rounded-lg text-lg text-center">
+                    Alfred Chat
+                </a>
+                
+                <a href="{{ url_for('jellyfin') }}" target="_blank" rel="noopener noreferrer" class="block w-full theme-button-primary font-semibold py-3 rounded-lg text-lg text-center">
+                    Jellyfin Server
+                </a>
+
+                <a href="{{ url_for('daily_quote') }}" class="block w-full theme-button-primary font-semibold py-3 rounded-lg text-lg text-center">
+                    Quote of the Day
+                </a>
+                </div>
+        </div>
+    </div>
+</body>
+</html>

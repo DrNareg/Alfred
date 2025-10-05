@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - Create User</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-bg-primary theme-text-light font-sans min-h-screen flex items-center justify-center p-6">
+  <div class="theme-bg-secondary w-full max-w-2xl rounded-xl p-8 shadow-2xl theme-border">
+
+    <h1 class="text-3xl font-bold text-center mb-6 theme-text-highlight">Admin - Create/Update Allowed Users</h1>
+
+    <p class="text-sm theme-text-muted mb-6 text-center">
+      Only usernames in <code class="theme-text-highlight">ALLOWED_USERNAMES</code> ({{ allowed_usernames | join(', ') }}) can be created or updated here.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="mb-6 space-y-2">
+          {% for category, message in messages %}
+            <li class="p-3 rounded-lg text-sm text-center
+              {% if category == 'success' %}flash-success{% elif category == 'danger' %}flash-danger{% else %}flash-info{% endif %}">
+              {{ message }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" class="space-y-6">
+      <div>
+        <label for="username" class="block text-sm font-medium mb-2 theme-text-muted">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          required
+          class="w-full p-3 rounded-lg theme-input-field theme-placeholder transition duration-200"
+          placeholder="Enter username">
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium mb-2 theme-text-muted">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          class="w-full p-3 rounded-lg theme-input-field theme-placeholder transition duration-200"
+          placeholder="Enter password">
+      </div>
+
+      <button
+        type="submit"
+        class="w-full theme-button-primary font-semibold py-3 rounded-lg transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+      >
+        Create / Update User
+      </button>
+    </form>
+
+    <div class="mt-10">
+      <h2 class="text-xl font-semibold mb-4 theme-text-highlight">Current Users (from Firestore):</h2>
+      {% if users %}
+        <ul class="space-y-2 divide-y theme-border-dark border rounded-lg p-4 theme-bg-tertiary">
+          {% for user in users %}
+            <li class="pt-2 text-sm text-center">
+              <strong>{{ user.get('user_display_name') }}</strong>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="theme-text-muted">No users found in Firestore yet.</p>
+      {% endif %}
+    </div>
+
+    <p class="text-center text-sm mt-8">
+      <a href="{{ url_for('login') }}" class="theme-text-highlight hover:underline">← Back to Login</a>
+    </p>
+  </div>
+</body>
+</html>

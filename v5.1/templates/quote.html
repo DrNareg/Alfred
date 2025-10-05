@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='batman-icon.svg') }}">
+    <title>Quote of the Day</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-bg-primary theme-text-light font-sans flex h-screen">
+
+    <main class="container mx-auto px-4 m-auto page-fade-in">
+        <div class="max-w-3xl mx-auto theme-bg-secondary rounded-2xl shadow-2xl theme-border-glow p-8 sm:p-12 text-center border">
+            
+            <h1 class="text-3xl sm:text-4xl font-bold theme-text-highlight mb-8">Quote of the Day</h1>
+            
+            <blockquote class="text-2xl italic theme-text-light mb-4 leading-relaxed">
+                "{{ quote }}"
+            </blockquote>
+            <footer class="text-xl theme-text-muted mt-4">
+                — {{ author }}
+            </footer>
+
+            <div class="mt-10">
+                 <a href="{{ url_for('landing_page') }}" class="theme-button-primary">
+                    Return to Landing Page
+                </a>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>
